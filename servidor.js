@@ -2,7 +2,7 @@ import express from 'express'
 import bcrypt from 'bcrypt'
 import 'dotenv/config'
 import {initializeApp} from 'firebase/app'
-import {collection, getFirestore, getDoc, doc, setDoc} from 'firebase/firestore'
+import {collection, getFirestore, getDoc, doc, setDoc, getDocs, deleteDoc} from 'firebase/firestore'
 
 const port = process.env.PORT || 6000;
 
@@ -107,7 +107,50 @@ app.post('/login', (req, res) => {
     })
 })
 
+app.get('/get-all', async (req, res) =>{
+  const usuarios = collection(db, 'usuarios')
+  const docUsuarios = await getDocs(usuarios)
+  
+  const arrUsuarios = []
+  docUsuarios.forEach((usuario) => {
+    const obj = {
+      nombre: usuario.data().nombre,
+      apaterno: usuario.data().apaterno,
+      amaterno: usuario.data().amaterno,
+      telefono: usuario.data().telefono,
+      usuario: usuario.data().usuario
+    }
+    arrUsuarios.push(obj)
+  })
 
+  if(arrUsuarios.length > 0){
+    res.json({
+      'alert': 'success',
+      'data': arrUsuarios
+    })
+  } else{
+    res.json({
+      'alert': 'error',
+      'message': 'No users in the database.'
+    })
+  }
+
+})
+
+app.post('/delete-user', (req, res) =>{
+  const {usuario} = req.body
+  deleteDoc(doc(collection(db, 'usuarios'), usuario))
+  .then(data=>{
+    res.json({
+      'alerta':'User was deleted'
+    })
+  }).catch(err => {
+    res.json({
+      'alert': 'Fail',
+      'message': 'User does not exist'
+    })
+  })
+})
 
 app.listen(port, () => {
   console.log('Listening on port', port);
